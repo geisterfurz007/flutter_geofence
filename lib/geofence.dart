@@ -8,8 +8,8 @@ export 'Geolocation.dart';
 typedef void GeofenceCallback(Geolocation foo);
 
 class Coordinate {
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
 
   Coordinate(this.latitude, this.longitude);
 }
@@ -17,15 +17,16 @@ class Coordinate {
 class Geofence {
   static const MethodChannel _channel = const MethodChannel('geofence');
 
-  static GeofenceCallback _entryCallback;
-  static GeofenceCallback _exitCallback;
+  static GeofenceCallback? _entryCallback;
+  static GeofenceCallback? _exitCallback;
 
   //ignore: close_sinks
   static StreamController<Coordinate> _userLocationUpdated =
       new StreamController<Coordinate>();
   // ignore: close_sinks
-  static StreamController<Coordinate> backgroundLocationUpdated = new StreamController<Coordinate>();
-  static Stream<Coordinate> _broadcastLocationStream;
+  static StreamController<Coordinate> backgroundLocationUpdated =
+      new StreamController<Coordinate>();
+  static late Stream<Coordinate> _broadcastLocationStream;
 
   /// Adds a geolocation for a certain geo-event
   static Future<void> addGeolocation(
@@ -40,7 +41,8 @@ class Geofence {
   }
 
   /// Stops listening to a geolocation for a certain geo-event
-  static Future<void> removeGeolocation(Geolocation geolocation, GeolocationEvent event) {
+  static Future<void> removeGeolocation(
+      Geolocation geolocation, GeolocationEvent event) {
     return _channel.invokeMethod("removeRegion", {
       "lng": geolocation.longitude,
       "lat": geolocation.latitude,
@@ -49,7 +51,7 @@ class Geofence {
       "event": event.toString(),
     });
   }
-  
+
   /// Stops listening to all regions
   static Future<void> removeAllGeolocations() {
     return _channel.invokeMethod("removeRegions", null);
@@ -80,25 +82,25 @@ class Geofence {
     _channel.setMethodCallHandler((call) async {
       if (call.method == "entry") {
         Geolocation location = Geolocation(
-            latitude: call.arguments["latitude"] as double,
-            longitude: call.arguments["longitude"] as double,
-            radius: call.arguments["radius"] as double,
-            id: call.arguments["id"] as String);
-        _entryCallback(location);
+            latitude: call.arguments["latitude"] as double?,
+            longitude: call.arguments["longitude"] as double?,
+            radius: call.arguments["radius"] as double?,
+            id: call.arguments["id"] as String?);
+        _entryCallback?.call(location);
       } else if (call.method == "exit") {
         Geolocation location = Geolocation(
-            latitude: call.arguments["latitude"] as double,
-            longitude: call.arguments["longitude"] as double,
-            radius: call.arguments["radius"] as double,
-            id: call.arguments["id"] as String);
-        _exitCallback(location);
+            latitude: call.arguments["latitude"] as double?,
+            longitude: call.arguments["longitude"] as double?,
+            radius: call.arguments["radius"] as double?,
+            id: call.arguments["id"] as String?);
+        _exitCallback?.call(location);
       } else if (call.method == "userLocationUpdated") {
         Coordinate coordinate =
             Coordinate(call.arguments["lat"], call.arguments["lng"]);
         _userLocationUpdated.sink.add(coordinate);
       } else if (call.method == "backgroundLocationUpdated") {
         Coordinate coordinate =
-        Coordinate(call.arguments["lat"], call.arguments["lng"]);
+            Coordinate(call.arguments["lat"], call.arguments["lng"]);
         backgroundLocationUpdated.sink.add(coordinate);
       }
       completer.complete();
